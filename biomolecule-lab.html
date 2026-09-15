@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Biomolecule Lab</title>
+<style>
+  :root{
+    --ink:#16241F;
+    --deep:#173832;
+    --deep2:#1F473F;
+    --paper:#EAF0E7;
+    --paper2:#DCE8DA;
+    --gold:#D9A441;
+    --gold-deep:#B8842C;
+    --teal:#2E8B77;
+    --crimson:#C1432B;
+    --line:#0F241E;
+    --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+    --font-body: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height:1.5;
+  }
+  .wrap{ max-width:920px; margin:0 auto; padding:28px 20px 60px; }
+
+  header{ margin-bottom:22px; }
+  header h1{
+    font-family: var(--font-display);
+    font-size:2.3rem;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+    color: var(--deep);
+  }
+  header p{
+    margin:0;
+    max-width:60ch;
+    color:#3C4F47;
+    font-size:1.02rem;
+  }
+
+  nav.tabs{
+    display:flex;
+    gap:8px;
+    margin:24px 0 20px;
+    border-bottom:2px solid var(--paper2);
+    flex-wrap:wrap;
+  }
+  nav.tabs button{
+    font-family:var(--font-body);
+    font-size:0.95rem;
+    font-weight:600;
+    background:none;
+    border:none;
+    padding:10px 4px;
+    margin-right:22px;
+    color:#5C6E66;
+    cursor:pointer;
+    position:relative;
+    top:2px;
+  }
+  nav.tabs button.active{
+    color: var(--deep);
+    border-bottom:3px solid var(--gold);
+  }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; animation: fade .25s ease; }
+  @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  /* ---- Carb builder ---- */
+  .target-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .target-card{
+    flex:1 1 200px;
+    background:#fff;
+    border:2px solid var(--paper2);
+    border-radius:10px;
+    padding:14px 16px;
+    cursor:pointer;
+    transition: border-color .15s, transform .15s;
+  }
+  .target-card:hover{ transform: translateY(-2px); }
+  .target-card.selected{ border-color: var(--gold-deep); background:#FBF3E1; }
+  .target-card.done{ border-color: var(--teal); }
+  .target-card h3{ margin:0 0 4px; font-family:var(--font-display); font-size:1.15rem; color:var(--deep); }
+  .target-card p{ margin:0; font-size:0.85rem; color:#5C6E66; }
+  .done-badge{ display:none; color:var(--teal); font-size:0.72rem; font-weight:700; margin-left:6px; }
+
+  .bond-row{ display:flex; align-items:center; gap:14px; margin:18px 0; flex-wrap:wrap; }
+  .bond-row .label{ font-weight:600; font-size:0.9rem; color:var(--deep); }
+  .bond-btn{
+    border:2px solid var(--paper2);
+    background:#fff;
+    border-radius:8px;
+    padding:8px 14px;
+    font-size:0.88rem;
+    cursor:pointer;
+    font-family: var(--font-body);
+  }
+  .bond-btn.active{ border-color: var(--teal); background:#E6F3EF; color:#1B5E4C; font-weight:600; }
+
+  .tray{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    margin:6px 0 22px;
+  }
+  .add-glucose{
+    width:64px; height:64px;
+    background: var(--gold);
+    border:none;
+    clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%);
+    cursor:pointer;
+    font-family:var(--font-display);
+    font-weight:bold;
+    color:var(--ink);
+    font-size:0.78rem;
+    transition: transform .1s;
+  }
+  .add-glucose:hover{ transform: scale(1.08); }
+  .tray-note{ font-size:0.85rem; color:#5C6E66; }
+
+  .chain-stage{
+    background: var(--deep);
+    border-radius:14px;
+    padding:26px 20px 34px;
+    min-height:170px;
+    position:relative;
+    overflow-x:auto;
+  }
+  .chain-row{ display:flex; align-items:flex-end; gap:2px; min-height:100px; flex-wrap:wrap; }
+  .empty-msg{ color:#A9C4BA; font-size:0.92rem; padding-top:30px; }
+
+  .mono{
+    width:52px; height:52px;
+    background: var(--gold);
+    clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.65rem; font-weight:700; color:var(--ink);
+    flex-shrink:0;
+  }
+  .mono.flip{ background:#E8C56F; transform: rotate(180deg); }
+  .mono.flip span{ display:inline-block; transform: rotate(180deg); }
+  .bond-tag{
+    align-self:center;
+    font-size:0.62rem;
+    color:#DCE8DA;
+    padding:0 3px;
+    white-space:nowrap;
+  }
+  .branch-wrap{ display:flex; flex-direction:column; align-items:center; }
+  .branch-chain{ display:flex; gap:2px; margin-bottom:2px; }
+  .branch-chain .mono{ width:38px; height:38px; }
+
+  .controls-row{ display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+  .btn{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:0.92rem;
+    padding:10px 18px;
+    border-radius:8px;
+    border:none;
+    cursor:pointer;
+  }
+  .btn-primary{ background: var(--teal); color:#fff; }
+  .btn-ghost{ background:#fff; color:var(--deep); border:2px solid var(--paper2); }
+
+  .feedback{
+    margin-top:18px;
+    padding:14px 16px;
+    border-radius:10px;
+    font-size:0.95rem;
+    display:none;
+  }
+  .feedback.show{ display:block; }
+  .feedback.correct{ background:#E6F3EF; color:#1B5E4C; border:1px solid var(--teal); }
+  .feedback.incorrect{ background:#FBEAE6; color:#8A2E1B; border:1px solid var(--crimson); }
+
+  /* ---- Quiz ---- */
+  .quiz-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; flex-wrap:wrap; gap:8px;}
+  .quiz-progress{ font-size:0.85rem; color:#5C6E66; }
+  .quiz-score{ font-family:var(--font-display); font-size:1.1rem; color:var(--deep); }
+  .qcard{
+    background:#fff;
+    border:2px solid var(--paper2);
+    border-radius:12px;
+    padding:22px;
+  }
+  .qcard h3{ margin:0 0 18px; font-family:var(--font-display); font-size:1.25rem; color:var(--deep); font-weight:normal; }
+  .opt{
+    display:block;
+    width:100%;
+    text-align:left;
+    background: var(--paper);
+    border:2px solid var(--paper2);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-bottom:10px;
+    font-size:0.95rem;
+    cursor:pointer;
+    font-family:var(--font-body);
+    color:var(--ink);
+  }
+  .opt:hover{ border-color:var(--gold-deep); }
+  .opt.correct{ background:#E6F3EF; border-color:var(--teal); }
+  .opt.wrong{ background:#FBEAE6; border-color:var(--crimson); }
+  .opt:disabled{ cursor:default; }
+  .explain{ margin-top:14px; font-size:0.9rem; color:#3C4F47; padding-top:12px; border-top:1px dashed var(--paper2); display:none; }
+  .explain.show{ display:block; }
+
+  .name-row{ display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .name-row input{
+    padding:10px 12px;
+    border-radius:8px;
+    border:2px solid var(--paper2);
+    font-size:0.95rem;
+    font-family:var(--font-body);
+    flex:1 1 220px;
+  }
+
+  .result-box{ text-align:center; padding:30px 10px; }
+  .result-box .big{ font-family:var(--font-display); font-size:2.4rem; color:var(--deep); }
+
+  /* ---- Leaderboard ---- */
+  table.lb{ width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; }
+  table.lb th, table.lb td{ text-align:left; padding:10px 14px; font-size:0.92rem; }
+  table.lb th{ background:var(--deep); color:#fff; font-weight:600; }
+  table.lb tr:nth-child(even){ background:var(--paper); }
+  .lb-note{ font-size:0.82rem; color:#5C6E66; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Biomolecule Lab</h1>
+    <p>Build carbohydrate polymers monomer by monomer, then test yourself with a quick quiz sprint.</p>
+    <div class="name-row" style="margin-top:16px;max-width:420px;">
+      <input type="text" id="globalName" placeholder="Enter your name to begin" maxlength="30">
+    </div>
+    <p style="font-size:0.8rem;color:#5C6E66;margin-top:6px;">Your name is attached to your quiz score and molecule submissions so your teacher can review them.</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="build">Carbohydrate Builder</button>
+    <button class="tab-btn" data-tab="quiz">Quiz Sprint</button>
+    <button class="tab-btn" data-tab="board">Class Results</button>
+  </nav>
+
+  <!-- BUILD PANEL -->
+  <section class="panel active" id="panel-build">
+    <div class="target-row" id="targetRow"></div>
+
+    <div class="bond-row">
+      <span class="label">Glycosidic bond to use next:</span>
+      <button class="bond-btn active" data-bond="a14">α-1,4</button>
+      <button class="bond-btn" data-bond="a16">α-1,6 (branch)</button>
+      <button class="bond-btn" data-bond="b14">β-1,4</button>
+    </div>
+
+    <div class="tray">
+      <button class="add-glucose" id="addGlucose">glucose</button>
+      <span class="tray-note">Click to add a glucose monomer to the chain using the selected bond.</span>
+    </div>
+
+    <div class="chain-stage">
+      <div class="chain-row" id="chainRow">
+        <div class="empty-msg">Your chain will build here — pick a target above, then start adding glucose.</div>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <button class="btn btn-primary" id="checkChain">Check my molecule</button>
+      <button class="btn btn-ghost" id="resetChain">Start over</button>
+      <button class="btn btn-primary" id="submitMolecule" style="display:none;background:var(--gold-deep);">Submit this molecule ✓</button>
+    </div>
+
+    <div class="feedback" id="buildFeedback"></div>
+  </section>
+
+  <!-- QUIZ PANEL -->
+  <section class="panel" id="panel-quiz">
+    <div id="quizIntro">
+      <div class="controls-row" style="margin-top:0;">
+        <button class="btn btn-primary" id="startQuiz">Start quiz sprint</button>
+      </div>
+      <p style="font-size:0.9rem;color:#5C6E66;">15 quick questions covering monomers and polymers across carbohydrates, proteins, lipids, and nucleic acids.</p>
+    </div>
+
+    <div id="quizPlay" style="display:none;">
+      <div class="quiz-top">
+        <span class="quiz-progress" id="quizProgress"></span>
+        <span class="quiz-score" id="quizScore">Score: 0</span>
+      </div>
+      <div class="qcard">
+        <h3 id="qText"></h3>
+        <div id="qOptions"></div>
+        <div class="explain" id="qExplain"></div>
+      </div>
+      <div class="controls-row">
+        <button class="btn btn-primary" id="nextQ" style="display:none;">Next question</button>
+      </div>
+    </div>
+
+    <div id="quizResult" style="display:none;">
+      <div class="result-box">
+        <div class="big" id="finalScore"></div>
+        <p id="finalMsg" style="color:#3C4F47;"></p>
+        <button class="btn btn-primary" id="retryQuiz">Play again</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD PANEL -->
+  <section class="panel" id="panel-board">
+    <p style="font-size:0.9rem;color:#5C6E66;">Quiz scores and molecule submissions from everyone using this lab appear here, pulled live from the class spreadsheet.</p>
+    <div class="controls-row" style="margin-top:0;margin-bottom:14px;">
+      <button class="btn btn-ghost" id="refreshBoard">Refresh</button>
+    </div>
+    <div id="boardHolder"><p style="color:#5C6E66;">No scores yet.</p></div>
+  </section>
+</div>
+
+<script>
+/* =========================================================
+   BACKEND CONFIG
+   Paste the URL of your deployed Google Apps Script web app
+   here (see SETUP_GUIDE.md). Until you do, scores/submissions
+   are logged to the console only and are NOT saved anywhere.
+   ========================================================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbyv6d_10ia4n6ZCJQsM3VjJSRMFwCF2DMgP8a5AT9He-tzSP4QUH-Te1WcAFpxc2CxiUw/exec";
+
+function backendConfigured(){
+  return API_URL && !API_URL.includes('PASTE_');
+}
+
+async function sendToBackend(payload){
+  if(!backendConfigured()){
+    console.warn('API_URL not configured — this submission was not saved:', payload);
+    return;
+  }
+  try{
+    // text/plain avoids a CORS preflight; Apps Script still parses the JSON body fine.
+    await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+  }catch(err){
+    console.error('Could not reach the backend', err);
+  }
+}
+
+function getStudentName(){
+  return document.getElementById('globalName').value.trim();
+}
+
+/* ---------------- Tabs ---------------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='board') loadBoard();
+  });
+});
+
+/* ---------------- Carbohydrate Builder ---------------- */
+const targets = [
+  {id:'starch', name:'Amylose (Starch)', desc:'A straight, unbranched chain — all α-1,4 links.'},
+  {id:'glycogen', name:'Glycogen', desc:'Like starch but heavily branched — needs α-1,6 branch points.'},
+  {id:'cellulose', name:'Cellulose', desc:'A straight chain of β-1,4 links, alternating monomer orientation.'},
+];
+let selectedTarget = null;
+let currentBond = 'a14';
+let chain = []; // {bond, branch:[{bond}], flip}
+
+const submittedMolecules = new Set();
+const targetRow = document.getElementById('targetRow');
+targets.forEach(t=>{
+  const card = document.createElement('div');
+  card.className='target-card';
+  card.dataset.id = t.id;
+  card.innerHTML = `<h3>${t.name} <span class="done-badge">✓ submitted</span></h3><p>${t.desc}</p>`;
+  card.addEventListener('click', ()=>{
+    selectedTarget = t.id;
+    document.querySelectorAll('.target-card').forEach(c=>c.classList.remove('selected'));
+    card.classList.add('selected');
+    hideSubmitButton();
+  });
+  targetRow.appendChild(card);
+});
+
+function hideSubmitButton(){
+  const btn = document.getElementById('submitMolecule');
+  btn.style.display = 'none';
+}
+
+document.querySelectorAll('.bond-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.bond-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    currentBond = b.dataset.bond;
+  });
+});
+
+function renderChain(){
+  const row = document.getElementById('chainRow');
+  row.innerHTML='';
+  if(chain.length===0){
+    row.innerHTML = '<div class="empty-msg">Your chain will build here — pick a target above, then start adding glucose.</div>';
+    return;
+  }
+  chain.forEach((link, i)=>{
+    if(i>0){
+      const tag = document.createElement('span');
+      tag.className='bond-tag';
+      tag.textContent = link.bond==='a14' ? 'α1→4' : link.bond==='b14' ? 'β1→4' : 'α1→4';
+      row.appendChild(tag);
+    }
+    if(link.branch){
+      const wrap = document.createElement('div');
+      wrap.className='branch-wrap';
+      const bc = document.createElement('div');
+      bc.className='branch-chain';
+      link.branch.forEach(()=>{
+        const m = document.createElement('div');
+        m.className='mono'; m.innerHTML='<span>Glc</span>';
+        bc.appendChild(m);
+      });
+      wrap.appendChild(bc);
+      const arrow = document.createElement('span');
+      arrow.className='bond-tag'; arrow.textContent='α1→6 ↓'; arrow.style.color='#F0D28A';
+      wrap.appendChild(arrow);
+      const m = document.createElement('div');
+      m.className='mono'+(link.flip?' flip':''); m.innerHTML='<span>Glc</span>';
+      wrap.appendChild(m);
+      row.appendChild(wrap);
+    } else {
+      const m = document.createElement('div');
+      m.className='mono'+(link.flip?' flip':'');
+      m.innerHTML='<span>Glc</span>';
+      row.appendChild(m);
+    }
+  });
+}
+
+document.getElementById('addGlucose').addEventListener('click', ()=>{
+  if(!selectedTarget){
+    showBuildFeedback(false, 'Pick a target molecule first (Amylose, Glycogen, or Cellulose).');
+    return;
+  }
+  if(currentBond==='a16'){
+    if(chain.length===0){
+      showBuildFeedback(false, 'A branch needs an existing chain to branch off — add a main-chain monomer first.');
+      return;
+    }
+    const last = chain[chain.length-1];
+    if(!last.branch) last.branch = [];
+    last.branch.push({});
+  } else {
+    const flip = currentBond==='b14' ? (chain.length % 2 === 1) : false;
+    chain.push({bond: chain.length===0 ? 'start' : currentBond, flip});
+  }
+  renderChain();
+  hideSubmitButton();
+});
+
+document.getElementById('resetChain').addEventListener('click', ()=>{
+  chain = [];
+  renderChain();
+  document.getElementById('buildFeedback').classList.remove('show');
+  hideSubmitButton();
+});
+
+function showBuildFeedback(ok, msg){
+  const fb = document.getElementById('buildFeedback');
+  fb.textContent = msg;
+  fb.className = 'feedback show ' + (ok ? 'correct':'incorrect');
+}
+
+document.getElementById('checkChain').addEventListener('click', ()=>{
+  if(!selectedTarget){ showBuildFeedback(false, 'Pick a target molecule first.'); return; }
+  if(chain.length < 6){ showBuildFeedback(false, `Only ${chain.length} monomers linked — build a longer chain (6+) before checking.`); return; }
+
+  const bonds = chain.slice(1).map(l=>l.bond);
+  const branchCount = chain.filter(l=>l.branch && l.branch.length>0).length;
+  const allA14 = bonds.every(b=>b==='a14');
+  const allB14 = bonds.every(b=>b==='b14');
+
+  let ok=false, msg='';
+  if(selectedTarget==='starch'){
+    ok = allA14 && branchCount===0;
+    msg = ok
+      ? 'Correct — an unbranched chain of glucose joined entirely by α-1,4 bonds is amylose, the simplest form of starch.'
+      : 'Not quite — amylose is unbranched and uses only α-1,4 bonds. ' + (branchCount>0 ? 'Remove the branch point(s).' : 'Check that every link is α-1,4, not β-1,4.');
+  } else if(selectedTarget==='glycogen'){
+    ok = allA14 && branchCount>=2;
+    msg = ok
+      ? 'Correct — glycogen is built like starch but with frequent α-1,6 branch points, which is what lets it be broken down quickly for energy.'
+      : 'Not quite — glycogen needs a mostly α-1,4 backbone plus at least two α-1,6 branch points. ' + (branchCount<2 ? 'Add more branches.' : 'Check your backbone bonds are α-1,4.');
+  } else if(selectedTarget==='cellulose'){
+    ok = allB14 && branchCount===0;
+    msg = ok
+      ? 'Correct — cellulose is an unbranched chain of β-1,4-linked glucose. That linkage flips every other glucose, producing straight, H-bonded fibers that most animals can\'t digest.'
+      : 'Not quite — cellulose needs β-1,4 bonds throughout and no branching. ' + (branchCount>0 ? 'Remove the branch(es).' : 'Check that every link is β-1,4, not α-1,4.');
+  }
+  showBuildFeedback(ok, msg);
+
+  const submitBtn = document.getElementById('submitMolecule');
+  if(ok){
+    submitBtn.style.display = 'inline-block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit this molecule ✓';
+    submitBtn.dataset.molecule = selectedTarget;
+  } else {
+    submitBtn.style.display = 'none';
+  }
+});
+
+document.getElementById('submitMolecule').addEventListener('click', async ()=>{
+  const name = getStudentName();
+  if(!name){
+    alert('Please enter your name at the top of the page first.');
+    return;
+  }
+  const btn = document.getElementById('submitMolecule');
+  const molecule = btn.dataset.molecule;
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+  await sendToBackend({type:'molecule', name, molecule});
+  btn.textContent = 'Submitted ✓';
+  submittedMolecules.add(molecule);
+  const card = document.querySelector(`.target-card[data-id="${molecule}"]`);
+  if(card){
+    card.classList.add('done');
+    card.querySelector('.done-badge').style.display = 'inline';
+  }
+});
+
+/* ---------------- Quiz ---------------- */
+const QUESTIONS = [
+  {q:"What is the monomer of a carbohydrate polymer?", opts:["Amino acid","Monosaccharide","Nucleotide","Fatty acid"], correct:1, ex:"Monosaccharides like glucose are the building blocks of di- and polysaccharides."},
+  {q:"Two monosaccharides joined together form a:", opts:["Polysaccharide","Disaccharide","Peptide","Nucleotide"], correct:1, ex:"A disaccharide (e.g. sucrose, maltose, lactose) is two monosaccharides joined by a glycosidic bond."},
+  {q:"Which bond links monosaccharides together?", opts:["Peptide bond","Phosphodiester bond","Glycosidic bond","Ester bond"], correct:2, ex:"Glycosidic bonds form between sugars via a dehydration (condensation) reaction."},
+  {q:"Table sugar (sucrose) is made of which two monomers?", opts:["Glucose + fructose","Glucose + galactose","Two glucose molecules","Fructose + galactose"], correct:0, ex:"Sucrose = glucose + fructose, joined by a glycosidic bond."},
+  {q:"Which polysaccharide is the primary energy storage molecule in animals?", opts:["Cellulose","Starch","Glycogen","Chitin"], correct:2, ex:"Glycogen is stored mainly in liver and muscle cells in animals."},
+  {q:"Which polysaccharide gives plant cell walls their structural strength?", opts:["Cellulose","Starch","Glycogen","Sucrose"], correct:0, ex:"Cellulose's β-1,4 linkages produce rigid, straight fibers ideal for structure."},
+  {q:"What is the monomer of a protein?", opts:["Nucleotide","Monosaccharide","Amino acid","Glycerol"], correct:2, ex:"Amino acids link via peptide bonds to form polypeptides."},
+  {q:"What bond joins amino acids together?", opts:["Glycosidic bond","Peptide bond","Hydrogen bond","Ester bond"], correct:1, ex:"A peptide bond forms between the carboxyl group of one amino acid and the amino group of the next."},
+  {q:"Which level of protein structure describes the linear sequence of amino acids?", opts:["Primary","Secondary","Tertiary","Quaternary"], correct:0, ex:"Primary structure is just the order of amino acids in the chain."},
+  {q:"A lipid's fatty acid tails are joined to which molecule to form a triglyceride?", opts:["Glucose","Glycerol","An amino acid","A nucleotide"], correct:1, ex:"Glycerol plus three fatty acids, joined by ester bonds, makes a triglyceride."},
+  {q:"What bond connects a fatty acid to glycerol?", opts:["Peptide bond","Glycosidic bond","Ester bond","Phosphodiester bond"], correct:2, ex:"Ester bonds form between the glycerol's -OH groups and the fatty acids' carboxyl groups."},
+  {q:"What are the three components of a nucleotide?", opts:["Sugar, phosphate, nitrogenous base","Amino acid, sugar, phosphate","Glycerol, fatty acid, phosphate","Sugar, amino acid, base"], correct:0, ex:"Every nucleotide has a five-carbon sugar, a phosphate group, and a nitrogenous base."},
+  {q:"What bond links nucleotides together in a nucleic acid strand?", opts:["Peptide bond","Glycosidic bond","Phosphodiester bond","Hydrogen bond"], correct:2, ex:"Phosphodiester bonds link the sugar of one nucleotide to the phosphate of the next."},
+  {q:"Which sugar is found in RNA nucleotides but not DNA?", opts:["Deoxyribose","Ribose","Glucose","Fructose"], correct:1, ex:"RNA uses ribose; DNA uses deoxyribose, which lacks one oxygen atom."},
+  {q:"An unsaturated fatty acid differs from a saturated one because it has:", opts:["A phosphate group","One or more double bonds in its carbon chain","An extra glycerol","No carboxyl group"], correct:1, ex:"Double bonds create kinks in the tail, which is why unsaturated fats are often liquid at room temperature."},
+];
+
+let quizOrder = [], quizIndex = 0, quizScore = 0, answered = false;
+
+document.getElementById('startQuiz').addEventListener('click', ()=>{
+  if(!getStudentName()){
+    alert('Please enter your name at the top of the page before starting.');
+    return;
+  }
+  quizOrder = [...QUESTIONS].sort(()=>Math.random()-0.5);
+  quizIndex = 0; quizScore = 0;
+  document.getElementById('quizIntro').style.display='none';
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizPlay').style.display='block';
+  showQuestion();
+});
+
+function showQuestion(){
+  answered = false;
+  const q = quizOrder[quizIndex];
+  document.getElementById('quizProgress').textContent = `Question ${quizIndex+1} of ${quizOrder.length}`;
+  document.getElementById('quizScore').textContent = `Score: ${quizScore}`;
+  document.getElementById('qText').textContent = q.q;
+  document.getElementById('qExplain').classList.remove('show');
+  document.getElementById('qExplain').textContent = '';
+  document.getElementById('nextQ').style.display='none';
+  const optHolder = document.getElementById('qOptions');
+  optHolder.innerHTML='';
+  q.opts.forEach((opt, i)=>{
+    const b = document.createElement('button');
+    b.className='opt';
+    b.textContent = opt;
+    b.addEventListener('click', ()=>selectAnswer(i));
+    optHolder.appendChild(b);
+  });
+}
+
+function selectAnswer(i){
+  if(answered) return;
+  answered = true;
+  const q = quizOrder[quizIndex];
+  const opts = document.querySelectorAll('.opt');
+  opts.forEach((b, idx)=>{
+    b.disabled = true;
+    if(idx===q.correct) b.classList.add('correct');
+    else if(idx===i) b.classList.add('wrong');
+  });
+  if(i===q.correct) quizScore++;
+  document.getElementById('quizScore').textContent = `Score: ${quizScore}`;
+  const ex = document.getElementById('qExplain');
+  ex.textContent = q.ex;
+  ex.classList.add('show');
+  document.getElementById('nextQ').style.display='inline-block';
+}
+
+document.getElementById('nextQ').addEventListener('click', ()=>{
+  quizIndex++;
+  if(quizIndex >= quizOrder.length){
+    finishQuiz();
+  } else {
+    showQuestion();
+  }
+});
+
+async function finishQuiz(){
+  document.getElementById('quizPlay').style.display='none';
+  document.getElementById('quizResult').style.display='block';
+  document.getElementById('finalScore').textContent = `${quizScore} / ${quizOrder.length}`;
+  const pct = quizScore/quizOrder.length;
+  document.getElementById('finalMsg').textContent =
+    pct>=0.85 ? "Excellent grasp of biomolecule monomers and bonds." :
+    pct>=0.6 ? "Solid work — a few concepts worth a second look." :
+    "Worth revisiting the monomers and bonds for each biomolecule class.";
+
+  const name = getStudentName();
+  if(name){
+    await sendToBackend({type:'quiz', name, score:quizScore, total:quizOrder.length});
+  }
+}
+
+document.getElementById('retryQuiz').addEventListener('click', ()=>{
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizIntro').style.display='block';
+});
+
+/* ---------------- Class Results ---------------- */
+async function loadBoard(){
+  const holder = document.getElementById('boardHolder');
+  if(!backendConfigured()){
+    holder.innerHTML = '<p style="color:#5C6E66;">The backend URL hasn\'t been configured yet — see SETUP_GUIDE.md.</p>';
+    return;
+  }
+  holder.innerHTML = '<p style="color:#5C6E66;">Loading…</p>';
+  try{
+    const res = await fetch(API_URL);
+    const entries = await res.json();
+    if(!entries || entries.length===0){
+      holder.innerHTML = '<p style="color:#5C6E66;">No submissions yet.</p>';
+      return;
+    }
+    entries.sort((a,b)=> (b.quizScore||0) - (a.quizScore||0));
+    let html = '<table class="lb"><tr><th>Name</th><th>Quiz</th><th>Starch</th><th>Glycogen</th><th>Cellulose</th></tr>';
+    entries.forEach(e=>{
+      const quizCell = (e.quizScore!==''&&e.quizScore!==undefined&&e.quizScore!==null) ? `${e.quizScore} / ${e.quizTotal}` : '—';
+      html += `<tr><td>${escapeHtml(String(e.name))}</td><td>${quizCell}</td><td>${e.starch ? '✓' : '—'}</td><td>${e.glycogen ? '✓' : '—'}</td><td>${e.cellulose ? '✓' : '—'}</td></tr>`;
+    });
+    html += '</table><p class="lb-note">Pulled live from the class Google Sheet.</p>';
+    holder.innerHTML = html;
+  }catch(e){
+    holder.innerHTML = '<p style="color:#5C6E66;">Could not load results right now.</p>';
+  }
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+document.getElementById('refreshBoard').addEventListener('click', loadBoard);
+</script>
+</body>
+</html>
